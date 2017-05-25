@@ -9,37 +9,37 @@ my_gui = {}
 -- gui_info is a table indexed by player index that stores GUI entities and related
 --   state
 -- each player has a table we'll call GuiInfo henceforth:
---   * frame (GuiEntity) - the mod's frame, holding all our displayed information
---   * label (GuiEntity) - the label that displays info on the currently selected sink
+--   * button (GuiEntity) - button for toggling the GUI on and off
+--   * frame (GuiEntity or nil) - the mod's frame, holding all our displayed
+--      information, if it's open
+--   * label (GuiEntity or nil) - the label that displays info on the
+--      currently selected sink, if it's open
+--   * selected (SourceInfo or SinkInfo or nil) - table describing currently
+--      selected mod entity
+--   * limit (table or nil) - defined sink limit GUI items, if visible
+--     * flow (GuiEntity): flow for the line with the limit/s textfield
+--     * textfield (GuiEntity): textfield where the limit is displayed/edited
+--     * button (GuiEntity): 'set' button next to above textfield
 --   * TODO: document limit-related stuff
 if not global.gui_info then global.gui_info = {} end
 
 -- set up the GUI for a player
 my_gui.create_for_player = function (player)
-  -- TODO: actually do something with this button
-  mod_gui.get_button_flow(player).add{
+  local button = mod_gui.get_button_flow(player).add{
     type = "sprite-button",
     name = "fluid-tester-button",
     sprite = "item/pipe-to-ground",
     style = mod_gui.button_style
   }
-  local frame = mod_gui.get_frame_flow(player).add{
-    type = "frame",
-    name = "fluid-tester-frame",
-    caption = "Fluid Tester",
-    direction = "vertical",
-    style = mod_gui.frame_style
-  }
-  local label = frame.add{
-    type = "label",
-    name = "fluid-tester-label",
-    caption = {"messages.no-sink-selected"},
-  }
-  global.gui_info[player.index] = {
-    frame = frame,
-    label = label,
-  }
+  global.gui_info[player.index] = {button = button}
   return global.gui_info[player.index]
+end
+
+-- setup the GUI for all existing players
+my_gui.create_for_all_players = function()
+  for index, player in pairs(game.players) do
+    my_gui.create_for_player(player)
+  end
 end
 
 -- get the info
@@ -51,10 +51,35 @@ my_gui.get_info = function(player_index)
   end
 end
 
-my_gui.create_for_all_players = function()
-  for index, player in pairs(game.players) do
-    my_gui.create_for_player(player)
-  end
+my_gui.open_for_player = function(player_index)
+  local gi = my_gui.get_info(player_index)
+  if gi.frame then return end -- already open
+
+  local player = game.players[player_index]
+  gi.frame = mod_gui.get_frame_flow(player).add{
+    type = "frame",
+    name = "fluid-tester-frame",
+    caption = "Fluid Tester",
+    direction = "vertical",
+    style = mod_gui.frame_style
+  }
+  gi.label = gi.frame.add{
+    type = "label",
+    name = "fluid-tester-label",
+    caption = {"messages.no-sink-selected"},
+  }
+  my_gui.update_for_player(player_index, {update_limit = true})
+  return
+end
+
+my_gui.close_for_player = function(player_index)
+  local gi = my_gui.get_info(player_index)
+  if not gi.frame then return end
+
+  gi.frame.destroy()
+  gi.frame = nil
+  gi.label = nil
+  gi.limit = nil
 end
 
 -- update the "Limit/s" text box for a player, displaying and hiding it as needed
@@ -112,6 +137,7 @@ end
 --   * update_limit(boolean): see update_player_gui_limit above.
 my_gui.update_for_player = function(player_index, options)
   local gi = my_gui.get_info(player_index)
+  if not gi.frame then return end -- GUI not open, nothing to show
   local sink_info = gi.selected
   if sink_info then
     -- this isn't ideal for localisation, but it's the best I can figure out
@@ -150,26 +176,33 @@ end
 my_gui.deselect_sink = function(entity)
   for player_index in pairs(game.players) do
     local gi = my_gui.get_info(player_index)
-    if gi.selected.entity == entity then
+    if gi.selected and gi.selected.entity == entity then
       gi.selected = nil
       my_gui.update_for_player(player_index)
     end
   end
 end
 
--- click handler, currently only handles "set" button clicks to change limits
+-- click handler for toggle an "set limit" buttons
 script.on_event(evs.on_gui_click, function(e)
-  local player = game.players[e.player_index]
   local gi = my_gui.get_info(e.player_index)
-  if not gi.limit then return end
-  if e.element == gi.limit.button then
+  if e.element == gi.button then
+    if gi.frame then
+      my_gui.close_for_player(e.player_index)
+    else
+      my_gui.open_for_player(e.player_index)
+    end
+    return
+  end
+  if gi.limit and e.element == gi.limit.button then
     local new_limit_str = gi.limit.textfield.text
     local new_limit = tonumber(new_limit_str)
     if new_limit then
       gi.selected.consume_per_sec = new_limit
     else
       -- TODO: localize
-      player.print("error: could not convert " .. new_limit_str .. " to a number")
+      local player = game.players[e.player_index]
+      player.print({"could-not-convert", new_limit_str})
     end
     my_gui.update_for_player(e.player_index, {update_limit=true})
   end

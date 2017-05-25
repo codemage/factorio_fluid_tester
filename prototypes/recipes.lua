@@ -1,16 +1,18 @@
-local fluid_infinite_sink_recipe = table.deepcopy(data.raw.recipe["pipe-to-ground"])
-fluid_infinite_sink_recipe.name = "fluid-infinite-sink"
-fluid_infinite_sink_recipe.enabled = true
-fluid_infinite_sink_recipe.ingredients = {{"iron-plate", 1},}
-fluid_infinite_sink_recipe.result = "fluid-infinite-sink"
-fluid_infinite_sink_recipe.result_count = 1
+-- all the stuff in this mod is just for testing, so let's make it cheap
+-- and not require any technologies to unlock it:
+local simple_recipe = function (name)
+  return {
+    type = "recipe",
+    name = name,
+    enabled = true,
+    ingredients = {{"iron-plate", 1}},
+    result = name,
+  }
+end
 
-local fluid_defined_sink_recipe = table.deepcopy(data.raw.recipe["pipe-to-ground"])
-fluid_defined_sink_recipe.name = "fluid-defined-sink"
-fluid_defined_sink_recipe.enabled = true
-fluid_defined_sink_recipe.ingredients = {{"iron-plate", 1},}
-fluid_defined_sink_recipe.result = "fluid-defined-sink"
-fluid_defined_sink_recipe.result_count = 1
+local fluid_infinite_sink = simple_recipe("fluid-infinite-sink")
+local fluid_defined_sink = simple_recipe("fluid-defined-sink")
+local fluid_source = simple_recipe("fluid-source")
 
-data:extend{fluid_infinite_sink_recipe, fluid_defined_sink_recipe}
+data:extend{fluid_infinite_sink, fluid_defined_sink, fluid_source}
 

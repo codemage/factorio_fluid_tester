@@ -22,7 +22,6 @@ local fluid_infinite_sink = table.deepcopy(data.raw.pipe["pipe"])
 fluid_infinite_sink.name = "fluid-infinite-sink"
 fluid_infinite_sink.icons = {{icon = data.raw.item.pipe.icon, tint={r=0,g=0,b=1,a=0.3}},}
 fluid_infinite_sink.minable.result = "fluid-infinite-sink"
-fluid_infinite_sink.operable = true
 adjust_paths(fluid_infinite_sink.pictures, function(filename)
   return filename:gsub("__base__/graphics/entity/pipe", "__FluidTester__/graphics/infinite-sink", 1)
 end)
@@ -41,5 +40,17 @@ adjust_paths(fluid_defined_sink.animations, function(filename)
 end)
 -- setup_fluid_box(fluid_defined_sink.fluid_box)
 
-data:extend{fluid_infinite_sink, fluid_defined_sink}
+local fluid_source = table.deepcopy(data.raw.pump["pump"])
+fluid_source.name = "fluid-source"
+fluid_source.icons = {{icon = data.raw.item.pump.icon, tint={r=1,g=0,b=0,a=0.3}},}
+fluid_source.minable.result = "fluid-source"
+fluid_source.fluid_box.base_area = 20
+fluid_source.fluid_box.base_level = 1
+fluid_source.fluid_box.pipe_connections[2] = nil -- output only
+fluid_source.pumping_speed = 200
+adjust_paths(fluid_source.animations, function(filename)
+  return filename:gsub("__base__/graphics/entity/pump", "__FluidTester__/graphics/source", 1)
+end)
+
+data:extend{fluid_infinite_sink, fluid_defined_sink, fluid_source}
 

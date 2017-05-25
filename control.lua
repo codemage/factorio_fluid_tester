@@ -25,6 +25,7 @@ local evs = defines.events
 
 script.on_init(function()
   global.sinks = {}
+  global.sources = {}
   my_gui.create_for_all_players()
 end)
 
@@ -63,6 +64,11 @@ script.on_event({evs.on_built_entity, evs.on_robot_built_entity}, function(e)
     local info = setup_sink_info(en)
     info.finite = true
     info.consume_per_sec = my_defines.default_consume_per_sec
+  elseif en.name == "fluid-source" then
+    global.sources[en.unit_number] = {
+      entity = en,
+      -- more to come here later
+    }
   end
 end)
 
@@ -131,6 +137,11 @@ script.on_event(evs.on_tick, function(e)
       end
     end
   end
+  for uid, source_info in pairs(global.sources) do
+    local e = source_info.entity
+    local cap = e.fluidbox.get_capacity(1)
+    e.fluidbox[1] = {type="water", amount=cap}
+  end
 end)
 
 -- Event handler that watches for players to mouse over one of our sinks.
@@ -153,11 +164,13 @@ script.on_event(
   function(e)
     local entity = e.entity
     local list = nil
-    if entity.name ~= "fluid-infinite-sink" and entity.name ~= "fluid-defined-sink" then
-      return
+    if entity.name == "fluid-infinite-sink" or entity.name ~= "fluid-defined-sink" then
+      my_gui.deselect_sink(entity)
+      global.sinks[entity.unit_number] = nil
     end
-    my_gui.deselect_sink(entity)
-    global.sinks[entity.unit_number] = nil
+    if entity.name == "fluid-source" then
+      global.sources[entity.unit_number] = nil
+    end
   end)
 
 -- Paste handler. This lets users copy-paste fluid consumption limits across
@@ -172,5 +185,5 @@ script.on_event(evs.on_entity_settings_pasted, function(e)
 end)
 
 -- next steps:
--- toggle-able GUI
+-- GUI and configurability for fluid source
 -- multiplayer testing
