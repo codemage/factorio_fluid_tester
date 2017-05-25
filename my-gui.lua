@@ -4,15 +4,15 @@ require("my-defines")
 
 local evs = defines.events
 
-my_gui = {
-  -- info is a table indexed by player index that stores GUI entities and related
-  --   state
-  -- each player has a table we'll call GuiInfo henceforth:
-  --   * frame (GuiEntity) - the mod's frame, holding all our displayed information
-  --   * label (GuiEntity) - the label that displays info on the currently selected sink
-  --   * 
-  info = {}
-}
+my_gui = {}
+
+-- gui_info is a table indexed by player index that stores GUI entities and related
+--   state
+-- each player has a table we'll call GuiInfo henceforth:
+--   * frame (GuiEntity) - the mod's frame, holding all our displayed information
+--   * label (GuiEntity) - the label that displays info on the currently selected sink
+--   * TODO: document limit-related stuff
+if not global.gui_info then global.gui_info = {} end
 
 -- set up the GUI for a player
 my_gui.create_for_player = function (player)
@@ -35,17 +35,17 @@ my_gui.create_for_player = function (player)
     name = "fluid-tester-label",
     caption = {"messages.no-sink-selected"},
   }
-  my_gui.info[player.index] = {
+  global.gui_info[player.index] = {
     frame = frame,
     label = label,
   }
-  return my_gui.info[player.index]
+  return global.gui_info[player.index]
 end
 
 -- get the info
 my_gui.get_info = function(player_index)
-  if my_gui.info[player_index] then
-    return my_gui.info[player_index]
+  if global.gui_info[player_index] then
+    return global.gui_info[player_index]
   else
     return my_gui.create_for_player(game.players[player_index])
   end
