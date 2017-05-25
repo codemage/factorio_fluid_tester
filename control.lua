@@ -172,5 +172,5 @@ script.on_event(evs.on_entity_settings_pasted, function(e)
 end)
 
 -- next steps:
--- better graphics
+-- toggle-able GUI
 -- multiplayer testing
