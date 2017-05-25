@@ -164,7 +164,7 @@ script.on_event(
   function(e)
     local entity = e.entity
     local list = nil
-    if entity.name == "fluid-infinite-sink" or entity.name ~= "fluid-defined-sink" then
+    if entity.name == "fluid-infinite-sink" or entity.name == "fluid-defined-sink" then
       my_gui.deselect_sink(entity)
       global.sinks[entity.unit_number] = nil
     end
